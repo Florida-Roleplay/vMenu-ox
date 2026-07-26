@@ -38,6 +38,11 @@ namespace vMenuClient
             Exports.Add("ClearMenu", new Action<int>(ClearMenu));
             Exports.Add("OpenMenu", new Action<int>(OpenMenuById));
             Exports.Add("SetAccent", new Action<int, int, int>((r, g, b) => MenuNui.SetAccent(r, g, b)));
+            Exports.Add("RefreshPermissions", new Action(() =>
+            {
+                TriggerServerEvent("vMenu:RequestPermissions");
+                TriggerServerEvent("vMenu:RequestAddonPerms");
+            }));
 
             Tick += WaitForReady;
             // Re-attach Lua-added categories when the menu tree is rebuilt (e.g. live ACE refresh).

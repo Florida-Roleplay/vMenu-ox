@@ -401,7 +401,15 @@ namespace vMenuClient
                 if (permissionsList != _lastPermsJson)
                 {
                     _lastPermsJson = permissionsList;
-                    _pendingRebuild = true;
+                    // Rebuild immediately (silently) if the menu is closed; otherwise defer until it closes.
+                    if (MenuController.IsAnyMenuOpen())
+                    {
+                        _pendingRebuild = true;
+                    }
+                    else
+                    {
+                        RebuildMenus();
+                    }
                 }
                 return;
             }
@@ -452,6 +460,15 @@ namespace vMenuClient
             RebuildAllowedCategories();
             BuildMenuTree();
             OnMenusRebuilt?.Invoke();
+        }
+
+        private static void RebuildIfPending()
+        {
+            if (_pendingRebuild)
+            {
+                _pendingRebuild = false;
+                RebuildMenus();
+            }
         }
         #endregion
 
@@ -524,7 +541,7 @@ namespace vMenuClient
                 StatSetFloat((uint)GetHashKey("MP0_PLAYER_MENTAL_STATE"), 0f, true);    // Mental State
             }
 
-            RegisterCommand($"vMenu:{GetKeyMappingId()}:MenuToggle", new Action<dynamic, List<dynamic>, string>(async (dynamic source, List<dynamic> args, string rawCommand) =>
+            RegisterCommand($"vMenu:{GetKeyMappingId()}:MenuToggle", new Action<dynamic, List<dynamic>, string>((dynamic source, List<dynamic> args, string rawCommand) =>
             {
                 if (!MenuEnabled)
                 {
@@ -532,20 +549,16 @@ namespace vMenuClient
                 }
                 if (!MenuController.IsAnyMenuOpen())
                 {
-                    // Re-check ACE on open so permission changes apply without a rejoin/restart.
+                    RebuildIfPending();
+                    Menu?.OpenMenu();
+                    // Passively refresh ACE so any change applies on the next close/open (no delay).
                     TriggerServerEvent("vMenu:RequestPermissions");
                     TriggerServerEvent("vMenu:RequestAddonPerms");
-                    await Delay(200);
-                    if (_pendingRebuild)
-                    {
-                        _pendingRebuild = false;
-                        RebuildMenus();
-                    }
-                    Menu?.OpenMenu();
                 }
                 else
                 {
                     MenuController.CloseAllMenus();
+                    RebuildIfPending();
                 }
             }), false);
 

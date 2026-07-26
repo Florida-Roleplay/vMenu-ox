@@ -78,9 +78,16 @@ Example test command: `/vmenu-setaccent` (`addons/setaccent.lua`) opens an ox_li
 sets the menu accent live via `exports.vMenu:SetAccent(r, g, b)`.
 
 ### 7. Live ACE refresh
-Opening the menu re-requests the player's permissions from the server (ACE is evaluated live
-server-side) and **rebuilds the menu if they changed** — so granting/revoking a permission applies
-without the player rejoining or the resource restarting. Lua-added categories are re-attached.
+ACE changes apply without a rejoin/restart. The menu re-requests permissions (main + addon
+categories) on open, and **rebuilds when they change** — silently while the menu is closed, or on the
+next close if it's currently open (no open delay). Scripts can force a silent refresh right after
+changing a player's perms:
+
+```lua
+exports.vMenu:RefreshPermissions()
+```
+
+Lua-added categories are re-attached on rebuild.
 
 ### 8. Fixes
 - Stripped vMenu's `→→→` submenu-arrow labels (our chevron replaces them).
