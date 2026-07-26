@@ -30,6 +30,9 @@ rendered on vMenu's `ui_page` (merged with vMenu's existing `storage.html`). See
 
 - **FSRP store theme** — blue gradient selection (`#4059d6 → #2b42a3`), glass surfaces, Satoshi font,
   configurable accent colour (drives selection, stat bars, checkboxes, counter).
+- **Accent synced to fsrp-hud** — `addons/accent_sync.lua` pulls the server-wide accent from
+  `exports['fsrp-hud']:GetCurrentAccentColor()` on start and follows the `fsrp-hud:accentColorChanged`
+  event live. Falls back to the default accent if fsrp-hud isn't running.
 - **GTA text colour codes** (`~r~`, `~g~`, `~b~`, `~h~`, `~s~`, `~n~`, …) parsed to real colours.
 - **Menu alignment** left / centre / right — follows vMenu's "Right Align Menu" setting, plus a
   convar override (`setr vmenu_nui_side "center"`).
