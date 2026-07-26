@@ -63,6 +63,10 @@ namespace vMenuClient.menus
             {
                 menu.AddMenuItem(removeAllWeapons);
             }
+            if (IsAllowed(Permission.WPUnlimitedAmmo) || IsAllowed(Permission.WPNoReload))
+            {
+                menu.AddMenuItem(GetSpacerMenuItem("Ammo Options"));
+            }
             if (IsAllowed(Permission.WPUnlimitedAmmo))
             {
                 menu.AddMenuItem(unlimitedAmmo);
@@ -267,6 +271,15 @@ namespace vMenuClient.menus
             var snipers = new Menu("Weapons", "Sniper Rifles");
             var snipersBtn = new MenuItem("Sniper Rifles");
 
+            MenuNui.SetIcon(handGunsBtn, "wpn_pistol");
+            MenuNui.SetIcon(riflesBtn, "wpn_rifle");
+            MenuNui.SetIcon(shotgunsBtn, "wpn_shotgun");
+            MenuNui.SetIcon(smgsBtn, "wpn_smg");
+            MenuNui.SetIcon(throwablesBtn, "wpn_throwable");
+            MenuNui.SetIcon(meleeBtn, "wpn_melee");
+            MenuNui.SetIcon(heavyBtn, "wpn_heavy");
+            MenuNui.SetIcon(snipersBtn, "wpn_sniper");
+
             MenuController.AddSubmenu(menu, handGuns);
             MenuController.AddSubmenu(menu, rifles);
             MenuController.AddSubmenu(menu, shotguns);
@@ -309,6 +322,41 @@ namespace vMenuClient.menus
             snipersBtn.Label = "→→→";
             menu.AddMenuItem(snipersBtn);
             MenuController.BindMenuItem(menu, snipers, snipersBtn);
+            #endregion
+
+            #region addon weapon categories (config/addon_weapons.json)
+            foreach (var cat in AddonCategories.WeaponCategories)
+            {
+                var catBtn = new MenuItem(cat.Name, $"Addon weapons — ~o~{cat.Name}~s~.") { LeftIcon = MenuItem.Icon.GUN };
+                var catMenu = new Menu("Weapon Options", cat.Name);
+                MenuController.AddSubmenu(menu, catMenu);
+                menu.AddMenuItem(catBtn);
+
+                if (AddonCategories.IsAllowed(cat) && IsAllowed(Permission.WPSpawn))
+                {
+                    MenuController.BindMenuItem(menu, catMenu, catBtn);
+                }
+                else
+                {
+                    catBtn.LeftIcon = MenuItem.Icon.LOCK;
+                    catBtn.Description = "You don't have permission to access this category.";
+                    catBtn.Enabled = false;
+                }
+
+                var catHashes = new List<uint>();
+                foreach (var w in cat.Weapons)
+                {
+                    catMenu.AddMenuItem(new MenuItem(w.Key, $"Equip ~y~{w.Key}~s~ with max ammo."));
+                    catHashes.Add((uint)GetHashKey(w.Value));
+                }
+
+                var hashes = catHashes;
+                catMenu.OnItemSelect += (s2, it2, idx2) =>
+                {
+                    if (idx2 >= 0 && idx2 < hashes.Count)
+                        GiveWeaponToPed(Game.PlayerPed.Handle, hashes[idx2], 9999, false, true);
+                };
+            }
             #endregion
 
             #region Loop through all weapons, create menus for them and add all menu items and handle events.

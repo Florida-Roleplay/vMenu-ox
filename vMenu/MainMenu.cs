@@ -636,6 +636,7 @@ namespace vMenuClient
                     Label = "→→→"
                 };
                 AddMenu(Menu, menu, button);
+                MenuNui.SetIcon(button, "users");
                 Menu.OnItemSelect += async (sender, item, index) =>
                 {
                     if (item == button)
@@ -656,6 +657,7 @@ namespace vMenuClient
                     Label = "→→→"
                 };
                 AddMenu(Menu, menu, button);
+                MenuNui.SetIcon(button, "person");
                 Menu.OnItemSelect += (sender, item, index) =>
                 {
                     if (item == button)
@@ -668,6 +670,7 @@ namespace vMenuClient
 
             var playerSubmenuBtn = new MenuItem("Player Related Options", "Open this submenu for player related subcategories.") { Label = "→→→" };
             Menu.AddMenuItem(playerSubmenuBtn);
+            MenuNui.SetIcon(playerSubmenuBtn, "person");
 
             // Add the player options menu.
             if (IsAllowed(Permission.POMenu))
@@ -679,10 +682,12 @@ namespace vMenuClient
                     Label = "→→→"
                 };
                 AddMenu(PlayerSubmenu, menu, button);
+                MenuNui.SetIcon(button, "tune");
             }
 
             var vehicleSubmenuBtn = new MenuItem("Vehicle Related Options", "Open this submenu for vehicle related subcategories.") { Label = "→→→" };
             Menu.AddMenuItem(vehicleSubmenuBtn);
+            MenuNui.SetIcon(vehicleSubmenuBtn, "car");
             // Add the vehicle options Menu.
             if (IsAllowed(Permission.VOMenu))
             {
@@ -693,6 +698,7 @@ namespace vMenuClient
                     Label = "→→→"
                 };
                 AddMenu(VehicleSubmenu, menu, button);
+                MenuNui.SetIcon(button, "wrench");
             }
 
             // Add the vehicle spawner menu.
@@ -705,6 +711,7 @@ namespace vMenuClient
                     Label = "→→→"
                 };
                 AddMenu(VehicleSubmenu, menu, button);
+                MenuNui.SetIcon(button, "car");
             }
 
             // Add Saved Vehicles menu.
@@ -717,6 +724,7 @@ namespace vMenuClient
                     Label = "→→→"
                 };
                 AddMenu(VehicleSubmenu, menu, button);
+                MenuNui.SetIcon(button, "save");
             }
 
             // Add the Personal Vehicle menu.
@@ -729,6 +737,7 @@ namespace vMenuClient
                     Label = "→→→"
                 };
                 AddMenu(VehicleSubmenu, menu, button);
+                MenuNui.SetIcon(button, "key");
             }
 
             // Add the player appearance menu.
@@ -741,6 +750,7 @@ namespace vMenuClient
                     Label = "→→→"
                 };
                 AddMenu(PlayerSubmenu, menu, button);
+                MenuNui.SetIcon(button, "person");
 
                 MpPedCustomizationMenu = new MpPedCustomization();
                 var menu2 = MpPedCustomizationMenu.GetMenu();
@@ -749,10 +759,12 @@ namespace vMenuClient
                     Label = "→→→"
                 };
                 AddMenu(PlayerSubmenu, menu2, button2);
+                MenuNui.SetIcon(button2, "person");
             }
 
             var worldSubmenuBtn = new MenuItem("World Related Options", "Open this submenu for world related subcategories.") { Label = "→→→" };
             Menu.AddMenuItem(worldSubmenuBtn);
+            MenuNui.SetIcon(worldSubmenuBtn, "map");
 
             // Add the time options menu.
             // check for 'not true' to make sure that it _ONLY_ gets disabled if the owner _REALLY_ wants it disabled, not if they accidentally spelled "false" wrong or whatever.
@@ -765,6 +777,7 @@ namespace vMenuClient
                     Label = "→→→"
                 };
                 AddMenu(WorldSubmenu, menu, button);
+                MenuNui.SetIcon(button, "clock");
             }
 
             // Add the weather options menu.
@@ -778,6 +791,7 @@ namespace vMenuClient
                     Label = "→→→"
                 };
                 AddMenu(WorldSubmenu, menu, button);
+                MenuNui.SetIcon(button, "cloud");
             }
 
             // Add the weapons menu.
@@ -790,6 +804,7 @@ namespace vMenuClient
                     Label = "→→→"
                 };
                 AddMenu(PlayerSubmenu, menu, button);
+                MenuNui.SetIcon(button, "gun");
             }
 
             // Add Weapon Loadouts menu.
@@ -802,6 +817,7 @@ namespace vMenuClient
                     Label = "→→→"
                 };
                 AddMenu(PlayerSubmenu, menu, button);
+                MenuNui.SetIcon(button, "gun");
             }
 
             {
@@ -812,6 +828,7 @@ namespace vMenuClient
                     Label = "→→→"
                 };
                 AddMenu(Menu, menu, button);
+                MenuNui.SetIcon(button, "camera");
             }
 
             // Add misc settings menu.
@@ -823,6 +840,7 @@ namespace vMenuClient
                     Label = "→→→"
                 };
                 AddMenu(Menu, menu, button);
+                MenuNui.SetIcon(button, "tune");
             }
 
             // Add About Menu.
@@ -833,6 +851,7 @@ namespace vMenuClient
                 Label = "→→→"
             };
             AddMenu(Menu, sub, btn);
+            MenuNui.SetIcon(btn, "about");
 
             // Refresh everything.
             MenuController.Menus.ForEach((m) => m.RefreshIndex());

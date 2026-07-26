@@ -579,7 +579,7 @@ namespace vMenuClient.menus
 
                     var maxTextures = GetNumberOfPedTextureVariations(Game.PlayerPed.Handle, i, currentVariationIndex);
 
-                    var listItem = new MenuListItem(clothingCategoryNames[i], items, currentVariationIndex, $"Select a drawable using the arrow keys and press ~o~enter~s~ to cycle through all available textures. Currently selected texture: #{currentVariationTextureIndex + 1} (of {maxTextures}).");
+                    var listItem = new MenuListItem(clothingCategoryNames[i], items, currentVariationIndex, $"~b~Texture {currentVariationTextureIndex + 1}/{maxTextures}~s~  ·  ←/→ to change drawable, press ~o~Enter~s~ to cycle textures.");
                     clothesMenu.AddMenuItem(listItem);
                 }
             }
@@ -609,7 +609,7 @@ namespace vMenuClient.menus
                 if (GetPedPropIndex(Game.PlayerPed.Handle, propId) != -1)
                 {
                     var maxPropTextures = GetNumberOfPedPropTextureVariations(Game.PlayerPed.Handle, propId, currentProp);
-                    var propListItem = new MenuListItem($"{propNames[x]}", propsList, currentProp, $"Select a prop using the arrow keys and press ~o~enter~s~ to cycle through all available textures. Currently selected texture: #{currentPropTexture + 1} (of {maxPropTextures}).");
+                    var propListItem = new MenuListItem($"{propNames[x]}", propsList, currentProp, $"~b~Texture {currentPropTexture + 1}/{maxPropTextures}~s~  ·  ←/→ to change prop, press ~o~Enter~s~ to cycle textures.");
                     propsMenu.AddMenuItem(propListItem);
                 }
                 else
@@ -1381,7 +1381,7 @@ namespace vMenuClient.menus
                 var maxTextures = GetNumberOfPedTextureVariations(Game.PlayerPed.Handle, componentIndex, newSelectionIndex);
 
                 currentCharacter.DrawableVariations.clothes[componentIndex] = new KeyValuePair<int, int>(newSelectionIndex, newTextureIndex);
-                listItem.Description = $"Select a drawable using the arrow keys and press ~o~enter~s~ to cycle through all available textures. Currently selected texture: #{newTextureIndex + 1} (of {maxTextures}).";
+                listItem.Description = $"~b~Texture {newTextureIndex + 1}/{maxTextures}~s~  ·  ←/→ to change drawable, press ~o~Enter~s~ to cycle textures.";
             };
 
             clothesMenu.OnListItemSelect += (sender, listItem, listIndex, realIndex) =>
@@ -1400,7 +1400,7 @@ namespace vMenuClient.menus
                 var maxTextures = GetNumberOfPedTextureVariations(Game.PlayerPed.Handle, componentIndex, listIndex);
 
                 currentCharacter.DrawableVariations.clothes[componentIndex] = new KeyValuePair<int, int>(listIndex, newTextureIndex);
-                listItem.Description = $"Select a drawable using the arrow keys and press ~o~enter~s~ to cycle through all available textures. Currently selected texture: #{newTextureIndex + 1} (of {maxTextures}).";
+                listItem.Description = $"~b~Texture {newTextureIndex + 1}/{maxTextures}~s~  ·  ←/→ to change drawable, press ~o~Enter~s~ to cycle textures.";
             };
             #endregion
 
@@ -1438,7 +1438,7 @@ namespace vMenuClient.menus
                     else
                     {
                         var maxPropTextures = GetNumberOfPedPropTextureVariations(Game.PlayerPed.Handle, propIndex, newSelectionIndex);
-                        listItem.Description = $"Select a prop using the arrow keys and press ~o~enter~s~ to cycle through all available textures. Currently selected texture: #{textureIndex + 1} (of {maxPropTextures}).";
+                        listItem.Description = $"~b~Texture {textureIndex + 1}/{maxPropTextures}~s~  ·  ←/→ to change prop, press ~o~Enter~s~ to cycle textures.";
                     }
                 }
             };
@@ -1477,7 +1477,7 @@ namespace vMenuClient.menus
                     else
                     {
                         var maxPropTextures = GetNumberOfPedPropTextureVariations(Game.PlayerPed.Handle, propIndex, listIndex);
-                        listItem.Description = $"Select a prop using the arrow keys and press ~o~enter~s~ to cycle through all available textures. Currently selected texture: #{newTextureIndex + 1} (of {maxPropTextures}).";
+                        listItem.Description = $"~b~Texture {newTextureIndex + 1}/{maxPropTextures}~s~  ·  ←/→ to change prop, press ~o~Enter~s~ to cycle textures.";
                     }
                 }
                 //propsMenu.UpdateScaleform();

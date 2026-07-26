@@ -334,6 +334,7 @@ namespace vMenuClient.menus
                     {
                         Label = $"Server #{p.ServerId} →→→"
                     };
+                    MenuNui.SetIcon(pItem, "person");
                     menu.AddMenuItem(pItem);
                     MenuController.BindMenuItem(menu, playerMenu, pItem);
                 }
