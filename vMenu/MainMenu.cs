@@ -383,10 +383,40 @@ namespace vMenuClient
         /// Set the permissions for this client.
         /// </summary>
         /// <param name="dict"></param>
+        private static string _lastPermsJson = null;
+        private static bool _pendingRebuild = false;
+
+        /// <summary>Fired after the menu tree is rebuilt live (e.g. following an ACE change), so other systems (Lua addons) can re-attach their menus.</summary>
+        public static event Action OnMenusRebuilt;
+
         public static async void SetPermissions(string permissionsList)
         {
             vMenuShared.PermissionsManager.SetPermissions(permissionsList);
+            RebuildAllowedCategories();
 
+            // Already set up? This is a live re-sync (an admin changed this player's ACE while
+            // connected). Flag a rebuild for the next menu open instead of duplicating the tree now.
+            if (ArePermissionsSetup)
+            {
+                if (permissionsList != _lastPermsJson)
+                {
+                    _lastPermsJson = permissionsList;
+                    _pendingRebuild = true;
+                }
+                return;
+            }
+
+            _lastPermsJson = permissionsList;
+            ArePermissionsSetup = true;
+            while (!ConfigOptionsSetupComplete)
+            {
+                await Delay(100);
+            }
+            PostPermissionsSetup();
+        }
+
+        private static void RebuildAllowedCategories()
+        {
             VehicleSpawner.allowedCategories = new List<bool>()
             {
                 IsAllowed(Permission.VSCompacts, checkAnyway: true),
@@ -413,12 +443,15 @@ namespace vMenuClient
                 IsAllowed(Permission.VSTrains, checkAnyway: true),
                 IsAllowed(Permission.VSOpenWheel, checkAnyway: true)
             };
-            ArePermissionsSetup = true;
-            while (!ConfigOptionsSetupComplete)
-            {
-                await Delay(100);
-            }
-            PostPermissionsSetup();
+        }
+
+        /// <summary>Rebuilds the whole menu tree from the current permissions (live ACE refresh).</summary>
+        public static void RebuildMenus()
+        {
+            MenuController.ResetMenus();
+            RebuildAllowedCategories();
+            BuildMenuTree();
+            OnMenusRebuilt?.Invoke();
         }
         #endregion
 
@@ -466,22 +499,8 @@ namespace vMenuClient
                 MenuEnabled = false;
                 return;
             }
-            // Create the main menu.
-            Menu = new Menu(Game.Player.Name, "Main Menu");
-            PlayerSubmenu = new Menu(Game.Player.Name, "Player Related Options");
-            VehicleSubmenu = new Menu(Game.Player.Name, "Vehicle Related Options");
-            WorldSubmenu = new Menu(Game.Player.Name, "World Options");
-
-            // Add the main menu to the menu pool.
-            MenuController.AddMenu(Menu);
-            MenuController.MainMenu = Menu;
-
-            MenuController.AddSubmenu(Menu, PlayerSubmenu);
-            MenuController.AddSubmenu(Menu, VehicleSubmenu);
-            MenuController.AddSubmenu(Menu, WorldSubmenu);
-
-            // Create all (sub)menus.
-            CreateSubmenus();
+            // Create the main menu + all (sub)menus.
+            BuildMenuTree();
 
             if (!GetSettingsBool(Setting.vmenu_disable_player_stats_setup))
             {
@@ -505,18 +524,28 @@ namespace vMenuClient
                 StatSetFloat((uint)GetHashKey("MP0_PLAYER_MENTAL_STATE"), 0f, true);    // Mental State
             }
 
-            RegisterCommand($"vMenu:{GetKeyMappingId()}:MenuToggle", new Action<dynamic, List<dynamic>, string>((dynamic source, List<dynamic> args, string rawCommand) =>
+            RegisterCommand($"vMenu:{GetKeyMappingId()}:MenuToggle", new Action<dynamic, List<dynamic>, string>(async (dynamic source, List<dynamic> args, string rawCommand) =>
             {
-                if (MenuEnabled)
+                if (!MenuEnabled)
                 {
-                    if (!MenuController.IsAnyMenuOpen())
+                    return;
+                }
+                if (!MenuController.IsAnyMenuOpen())
+                {
+                    // Re-check ACE on open so permission changes apply without a rejoin/restart.
+                    TriggerServerEvent("vMenu:RequestPermissions");
+                    TriggerServerEvent("vMenu:RequestAddonPerms");
+                    await Delay(200);
+                    if (_pendingRebuild)
                     {
-                        Menu.OpenMenu();
+                        _pendingRebuild = false;
+                        RebuildMenus();
                     }
-                    else
-                    {
-                        MenuController.CloseAllMenus();
-                    }
+                    Menu?.OpenMenu();
+                }
+                else
+                {
+                    MenuController.CloseAllMenus();
                 }
             }), false);
 
@@ -624,6 +653,23 @@ namespace vMenuClient
         /// <summary>
         /// Creates all the submenus depending on the permissions of the user.
         /// </summary>
+        private static void BuildMenuTree()
+        {
+            Menu = new Menu(Game.Player.Name, "Main Menu");
+            PlayerSubmenu = new Menu(Game.Player.Name, "Player Related Options");
+            VehicleSubmenu = new Menu(Game.Player.Name, "Vehicle Related Options");
+            WorldSubmenu = new Menu(Game.Player.Name, "World Options");
+
+            MenuController.AddMenu(Menu);
+            MenuController.MainMenu = Menu;
+
+            MenuController.AddSubmenu(Menu, PlayerSubmenu);
+            MenuController.AddSubmenu(Menu, VehicleSubmenu);
+            MenuController.AddSubmenu(Menu, WorldSubmenu);
+
+            CreateSubmenus();
+        }
+
         private static void CreateSubmenus()
         {
             // Add the online players menu.

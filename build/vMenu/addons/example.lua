@@ -1,7 +1,3 @@
--- Example vMenu Lua addon. Copy/rename this file and edit it — no C# rebuild needed.
--- Any .lua file in this addons/ folder is auto-loaded (see fxmanifest.lua).
-
--- "addons" = nested under an "Addons" submenu on the main menu. Use "main" to show it directly.
 local menu = vMenu.CreateCategory("Server Extras", "star", "addons")
 
 menu:AddButton("Repair Vehicle", "wrench", function()

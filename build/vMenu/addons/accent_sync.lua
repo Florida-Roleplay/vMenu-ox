@@ -1,8 +1,3 @@
--- Syncs the menu accent with the FSRP-wide accent from fsrp-hud.
--- fsrp-hud exposes: exports['fsrp-hud']:GetCurrentAccentColor()  (hex string, e.g. "#257EF2")
--- and fires the local event 'fsrp-hud:accentColorChanged' whenever it changes.
--- If fsrp-hud isn't running, this does nothing and the menu keeps its default accent.
-
 local function hexToRgb(hex)
     if type(hex) ~= "string" then return nil end
     hex = hex:gsub("#", "")
@@ -24,7 +19,6 @@ local function applyAccent(color)
     if r then exports.vMenu:SetAccent(math.floor(r + 0.5), math.floor(g + 0.5), math.floor(b + 0.5)) end
 end
 
--- Pull the current accent on start (retry a few times while fsrp-hud initialises).
 CreateThread(function()
     for _ = 1, 10 do
         Wait(500)
@@ -36,7 +30,6 @@ CreateThread(function()
     end
 end)
 
--- Follow live changes.
 AddEventHandler("fsrp-hud:accentColorChanged", function(color)
     applyAccent(color)
 end)

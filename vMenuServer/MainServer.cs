@@ -515,6 +515,14 @@ namespace vMenuServer
         /// </summary>
         /// <param name="source"></param>
         /// <param name="vehicleNetId"></param>
+        [EventHandler("vMenu:RequestPermissions")]
+        internal void OnRequestPermissions([FromSource] Player source)
+        {
+            // ACE is evaluated live server-side, so this re-sends the player's current permissions
+            // (used on menu open so ACE changes apply without a rejoin/restart).
+            PermissionsManager.SetPermissionsForPlayer(source);
+        }
+
         [EventHandler("vMenu:RequestAddonPerms")]
         internal void SendAddonPerms([FromSource] Player source)
         {

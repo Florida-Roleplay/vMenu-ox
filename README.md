@@ -77,7 +77,12 @@ local sub = menu:AddSubmenu("Tuning", "wheel"); sub:AddSlider("Power", 0, 10, 5,
 Example test command: `/vmenu-setaccent` (`addons/setaccent.lua`) opens an ox_lib colour picker and
 sets the menu accent live via `exports.vMenu:SetAccent(r, g, b)`.
 
-### 7. Fixes
+### 7. Live ACE refresh
+Opening the menu re-requests the player's permissions from the server (ACE is evaluated live
+server-side) and **rebuilds the menu if they changed** — so granting/revoking a permission applies
+without the player rejoining or the resource restarting. Lua-added categories are re-attached.
+
+### 8. Fixes
 - Stripped vMenu's `→→→` submenu-arrow labels (our chevron replaces them).
 - Navigation **skips spacers/dividers** (selection no longer lands on a divider).
 - Spacers render as clean separator dividers.

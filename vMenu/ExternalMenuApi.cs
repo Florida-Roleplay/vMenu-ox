@@ -40,6 +40,8 @@ namespace vMenuClient
             Exports.Add("SetAccent", new Action<int, int, int>((r, g, b) => MenuNui.SetAccent(r, g, b)));
 
             Tick += WaitForReady;
+            // Re-attach Lua-added categories when the menu tree is rebuilt (e.g. live ACE refresh).
+            MainMenu.OnMenusRebuilt += ReattachAll;
         }
 
         private async Task WaitForReady()
@@ -48,10 +50,17 @@ namespace vMenuClient
             {
                 _ready = true;
                 foreach (var a in _pending) { try { a(); } catch { } }
-                _pending.Clear();
                 Tick -= WaitForReady;
             }
             await Delay(_ready ? 60000 : 250);
+        }
+
+        // The main menu was rebuilt; our category menus were dropped from the pool. Re-run the
+        // attach actions so they re-add themselves to the fresh main menu.
+        private void ReattachAll()
+        {
+            _addonsMenu = null;
+            foreach (var a in _pending) { try { a(); } catch { } }
         }
 
         private void Dispatch(string kind, int itemId, object value)
@@ -61,8 +70,8 @@ namespace vMenuClient
 
         private void Attach(Action a)
         {
+            _pending.Add(a);
             if (_ready) { try { a(); } catch { } }
-            else _pending.Add(a);
         }
 
         private int Register(Menu menu)

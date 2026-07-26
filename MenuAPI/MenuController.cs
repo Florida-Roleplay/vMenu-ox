@@ -801,6 +801,16 @@ namespace MenuAPI
             Menus.ForEach((m) => { if (m.Visible) { m.CloseMenu(); } });
         }
 
+        // Clears the whole menu pool so the menus can be rebuilt from scratch (e.g. after a live
+        // permission change). Callers are expected to re-add their menus afterwards.
+        public static void ResetMenus()
+        {
+            CloseAllMenus();
+            Menus.Clear();
+            MenuButtons.Clear();
+            MainMenu = null;
+        }
+
         /// <summary>
         /// Disables the most important controls for when a menu is open.
         /// </summary>
