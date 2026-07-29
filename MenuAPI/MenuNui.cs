@@ -37,6 +37,11 @@ namespace MenuAPI
             _last = null;
         }
 
+        public static void SetMoveMode(bool enabled)
+        {
+            SendNuiMessage(JsonConvert.SerializeObject(new { action = "moveMenu", enabled }));
+        }
+
         public static void Hide()
         {
             if (!_visible) return;

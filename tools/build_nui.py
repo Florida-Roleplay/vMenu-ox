@@ -12,8 +12,8 @@ OUT_IMAGES = os.path.join(REPO, "build", "vMenu", "images")
 STORAGE_CSS = """
 @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
 #vmenu-storage * { margin:0; padding:0; text-align:center; box-sizing:border-box; font-family:'Roboto',sans-serif; }
-#vmenu-storage { position:absolute; inset:0; z-index:50; }
-#vmenu-storage #body { margin-top:50px; max-width:1200px; margin-left:auto; margin-right:auto; background-color:rgba(255,255,255,0.9); border-radius:8px; }
+#vmenu-storage { position:absolute; inset:0; z-index:50; pointer-events:none; }
+#vmenu-storage #body { margin-top:50px; max-width:1200px; margin-left:auto; margin-right:auto; background-color:rgba(255,255,255,0.9); border-radius:8px; pointer-events:auto; }
 #vmenu-storage .error { background-color:lightcoral; color:rgb(121,34,34); padding:30px; }
 #vmenu-storage input[type="checkbox"]:not(:checked)+div { display:none; }
 #vmenu-storage hr { margin-top:10px; margin-bottom:10px; border:none; border-top:1px solid lightgray; }

@@ -128,7 +128,7 @@ namespace vMenuClient.menus
             var backBtn = new MenuItem("Back");
 
             // Create the menu items.
-            var rightAlignMenu = new MenuCheckboxItem("Right Align Menu", "If you want vMenu to appear on the left side of your screen, disable this option. This option will be saved immediately. You don't need to click save preferences.", MiscRightAlignMenu);
+            var moveMenu = new MenuItem("Move Menu", "Enter move mode, then drag the menu anywhere on your screen. Press ~y~Enter~s~ to save the position, or ~y~R~s~ to reset back to default.");
             var disablePms = new MenuCheckboxItem("Disable Private Messages", "Prevent others from sending you a private message via the Online Players menu. This also prevents you from sending messages to other players.", MiscDisablePrivateMessages);
             var disableControllerKey = new MenuCheckboxItem("Disable Controller Support", "This disables the controller menu toggle key. This does NOT disable the navigation buttons.", MiscDisableControllerSupport);
             var speedKmh = new MenuCheckboxItem("Show Speed KM/H", "Show a speedometer on your screen indicating your speed in KM/h.", ShowSpeedoKmh);
@@ -628,7 +628,7 @@ namespace vMenuClient.menus
             keybindMenu.AddMenuItem(backBtn);
 
             // Always allowed
-            menu.AddMenuItem(rightAlignMenu);
+            menu.AddMenuItem(moveMenu);
             menu.AddMenuItem(disablePms);
             menu.AddMenuItem(disableControllerKey);
             menu.AddMenuItem(speedKmh);
@@ -734,24 +734,7 @@ namespace vMenuClient.menus
             // Handle checkbox changes.
             menu.OnCheckboxChange += (sender, item, index, _checked) =>
             {
-                if (item == rightAlignMenu)
-                {
-
-                    MenuController.MenuAlignment = _checked ? MenuController.MenuAlignmentOption.Right : MenuController.MenuAlignmentOption.Left;
-                    MiscRightAlignMenu = _checked;
-                    UserDefaults.MiscRightAlignMenu = MiscRightAlignMenu;
-
-                    if (MenuController.MenuAlignment != (_checked ? MenuController.MenuAlignmentOption.Right : MenuController.MenuAlignmentOption.Left))
-                    {
-                        Notify.Error(CommonErrors.RightAlignedNotSupported);
-                        // (re)set the default to left just in case so they don't get this error again in the future.
-                        MenuController.MenuAlignment = MenuController.MenuAlignmentOption.Left;
-                        MiscRightAlignMenu = false;
-                        UserDefaults.MiscRightAlignMenu = false;
-                    }
-
-                }
-                else if (item == disablePms)
+                if (item == disablePms)
                 {
                     MiscDisablePrivateMessages = _checked;
                 }
@@ -882,8 +865,15 @@ namespace vMenuClient.menus
             // Handle button presses.
             menu.OnItemSelect += (sender, item, index) =>
             {
+                // enter drag-to-move mode
+                if (item == moveMenu)
+                {
+                    MenuController.CloseAllMenus();
+                    MenuNui.SetMoveMode(true);
+                    SetNuiFocus(true, true);
+                }
                 // export data
-                if (item == exportData)
+                else if (item == exportData)
                 {
                     MenuController.CloseAllMenus();
                     var vehicles = GetSavedVehicles();
