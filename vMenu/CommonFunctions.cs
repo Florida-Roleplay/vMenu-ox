@@ -59,6 +59,42 @@ namespace vMenuClient
             return Exports["vMenu"].canDoInteraction(type);
 
         }
+        public void OxGiveWeapon(string spawnName, int tint)
+        {
+            Exports["vMenu"].oxGiveWeapon(spawnName, tint);
+        }
+        public void OxToggleWeapon(string spawnName, int tint)
+        {
+            Exports["vMenu"].oxToggleWeapon(spawnName, tint);
+        }
+        public void OxRemoveWeapon(string spawnName)
+        {
+            Exports["vMenu"].oxRemoveWeapon(spawnName);
+        }
+        public void OxGiveAllWeapons()
+        {
+            Exports["vMenu"].oxGiveAllWeapons();
+        }
+        public void OxRemoveAllWeapons()
+        {
+            Exports["vMenu"].oxRemoveAllWeapons();
+        }
+        public void OxRefillAmmo(string spawnName)
+        {
+            Exports["vMenu"].oxRefillAmmo(spawnName);
+        }
+        public void OxSetAllAmmo(int count)
+        {
+            Exports["vMenu"].oxSetAllAmmo(count);
+        }
+        public void OxToggleComponent(string spawnName, uint componentHash)
+        {
+            Exports["vMenu"].oxToggleComponent(spawnName, componentHash);
+        }
+        public void OxSetTint(string spawnName, int tint)
+        {
+            Exports["vMenu"].oxSetTint(spawnName, tint);
+        }
         public async Task<bool> LoadSharedOutfit()
         {
             return await Exports["vMenu"].loadSharedOutfit();
@@ -1480,6 +1516,11 @@ namespace vMenuClient
             if (saveName != null)
             {
                 ApplyVehicleModsDelayed(vehicle, vehicleInfo, 500);
+
+                // Tag saved vehicles with their save identity so ox_inventory keys this vehicle's trunk/glovebox
+                // storage to the saved vehicle rather than its (mutable) plate. Set server-side (via this event)
+                // so it works with sv_stateBagStrictMode enabled.
+                TriggerServerEvent("vMenu:ox:tagVehicleStorage", NetworkGetNetworkIdFromEntity(vehicle.Handle), saveName);
             }
 
             // Set the previous vehicle to the new vehicle.
@@ -1981,6 +2022,45 @@ namespace vMenuClient
         {
             var ExternalFunctions = new ExternalFunctions();
             return await ExternalFunctions.GetUserConfirmation(windowTitle, description);
+        }
+        #endregion
+
+        #region ox_inventory weapon integration
+        public static void OxGiveWeapon(string spawnName, int tint = 0)
+        {
+            new ExternalFunctions().OxGiveWeapon(spawnName, tint);
+        }
+        public static void OxToggleWeapon(string spawnName, int tint = 0)
+        {
+            new ExternalFunctions().OxToggleWeapon(spawnName, tint);
+        }
+        public static void OxRemoveWeapon(string spawnName)
+        {
+            new ExternalFunctions().OxRemoveWeapon(spawnName);
+        }
+        public static void OxGiveAllWeapons()
+        {
+            new ExternalFunctions().OxGiveAllWeapons();
+        }
+        public static void OxRemoveAllWeapons()
+        {
+            new ExternalFunctions().OxRemoveAllWeapons();
+        }
+        public static void OxRefillAmmo(string spawnName)
+        {
+            new ExternalFunctions().OxRefillAmmo(spawnName);
+        }
+        public static void OxSetAllAmmo(int count)
+        {
+            new ExternalFunctions().OxSetAllAmmo(count);
+        }
+        public static void OxToggleComponent(string spawnName, uint componentHash)
+        {
+            new ExternalFunctions().OxToggleComponent(spawnName, componentHash);
+        }
+        public static void OxSetTint(string spawnName, int tint)
+        {
+            new ExternalFunctions().OxSetTint(spawnName, tint);
         }
         #endregion
 
@@ -2759,13 +2839,8 @@ namespace vMenuClient
             {
                 if (int.TryParse(inputAmmo, out var ammo))
                 {
-                    foreach (var vw in ValidWeapons.WeaponList)
-                    {
-                        if (HasPedGotWeapon(Game.PlayerPed.Handle, vw.Hash, false))
-                        {
-                            SetPedAmmo(Game.PlayerPed.Handle, vw.Hash, ammo);
-                        }
-                    }
+                    // Sets the loaded ammo on every weapon item in the player's ox_inventory (server-side).
+                    OxSetAllAmmo(ammo);
                 }
                 else
                 {
@@ -2788,7 +2863,6 @@ namespace vMenuClient
                 return;
             }
 
-            var ammo = 900;
             var inputName = await GetUserInput(windowTitle: "Enter Weapon Model Name", maxInputLength: 30);
             if (!string.IsNullOrEmpty(inputName))
             {
@@ -2813,8 +2887,8 @@ namespace vMenuClient
 
                 if (IsWeaponValid(model))
                 {
-                    GiveWeaponToPed(Game.PlayerPed.Handle, model, ammo, false, true);
-                    Notify.Success("Added weapon to inventory.");
+                    // Adds the weapon to the player's ox_inventory; the server validates it exists as an item.
+                    OxGiveWeapon(inputName, 0);
                 }
                 else
                 {
@@ -2925,7 +2999,7 @@ namespace vMenuClient
             {
                 if (!appendWeapons)
                 {
-                    Game.PlayerPed.Weapons.RemoveAll();
+                    OxRemoveAllWeapons();
                 }
 
                 if (!ignoreSettingsAndPerms && loadout.Any((wp) => !IsAllowed(wp.Perm)))
@@ -2937,61 +3011,20 @@ namespace vMenuClient
                 {
                     if (ignoreSettingsAndPerms || IsAllowed(w.Perm))
                     {
-                        GiveWeaponToPed(Game.PlayerPed.Handle, w.Hash, w.CurrentAmmo > -1 ? w.CurrentAmmo : w.GetMaxAmmo, false, false);
+                        // Add the weapon to ox_inventory (with its saved tint), then re-apply saved attachments.
+                        // Net events are processed in order server-side, so the weapon item exists before the
+                        // component toggles run.
+                        OxGiveWeapon(w.SpawnName, w.CurrentTint);
 
                         if (w.Components.Count > 0)
                         {
                             foreach (var wc in w.Components)
                             {
-                                if (DoesWeaponTakeWeaponComponent(w.Hash, wc.Value))
-                                {
-                                    GiveWeaponComponentToPed(Game.PlayerPed.Handle, w.Hash, wc.Value);
-                                    var timer = GetGameTimer();
-                                    while (!HasPedGotWeaponComponent(Game.PlayerPed.Handle, w.Hash, wc.Value))
-                                    {
-                                        await Delay(0);
-                                        if (GetGameTimer() - timer > 1000)
-                                        {
-                                            // took too long :)
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        SetPedWeaponTintIndex(Game.PlayerPed.Handle, w.Hash, w.CurrentTint);
-
-                        if (w.CurrentAmmo > 0)
-                        {
-                            var ammo = w.CurrentAmmo;
-                            if (w.CurrentAmmo > w.GetMaxAmmo)
-                            {
-                                ammo = w.GetMaxAmmo;
-                            }
-                            var doIt = false;
-                            while (GetAmmoInPedWeapon(Game.PlayerPed.Handle, w.Hash) != ammo && w.CurrentAmmo != -1)
-                            {
-                                if (doIt)
-                                {
-                                    SetCurrentPedWeapon(Game.PlayerPed.Handle, w.Hash, true);
-                                }
-                                doIt = true;
-                                var ammoInClip = GetMaxAmmoInClip(Game.PlayerPed.Handle, w.Hash, false);
-                                if (ammoInClip > ammo)
-                                {
-                                    ammoInClip = ammo;
-                                }
-                                SetAmmoInClip(Game.PlayerPed.Handle, w.Hash, ammoInClip);
-                                SetPedAmmo(Game.PlayerPed.Handle, w.Hash, ammo > -1 ? ammo : w.GetMaxAmmo);
-                                Log($"waiting for ammo in {w.Name}");
-                                await Delay(0);
+                                OxToggleComponent(w.SpawnName, wc.Value);
                             }
                         }
                     }
                 }
-
-                SetCurrentPedWeapon(Game.PlayerPed.Handle, (uint)GetHashKey("weapon_unarmed"), true);
 
                 if (!(saveName == "vmenu_temp_weapons_loadout_before_respawn" || dontNotify))
                 {

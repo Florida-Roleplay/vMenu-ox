@@ -1,0 +1,74 @@
+name: Release
+
+# Compiles vMenuClient/vMenuServer and publishes a GitHub Release whenever
+# `production` is updated (merge from `dev` or direct push).
+on:
+  push:
+    branches:
+      - production
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Optional version override (e.g. 3.1.0). Leave empty to auto-bump patch.'
+        required: false
+        type: string
+
+concurrency:
+  group: vmenu-ox-production-release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v2
+
+      - name: Resolve next version
+        id: version
+        run: node .github/actions/next-version.js
+        env:
+          TGT_RELEASE_VERSION: ${{ inputs.version }}
+
+      - name: Bump fxmanifest version
+        run: node .github/actions/bump-manifest-version.js
+        env:
+          TGT_RELEASE_VERSION: ${{ steps.version.outputs.tag }}
+
+      - name: Restore packages
+        run: nuget restore vMenu.sln
+
+      - name: Build solution
+        run: msbuild vMenu.sln /p:Configuration=Release /verbosity:minimal
+
+      - name: Bundle resource
+        shell: pwsh
+        run: |
+          foreach ($dll in 'vMenuClient.net.dll', 'vMenuServer.net.dll') {
+            if (-not (Test-Path "build/vMenu/$dll")) { throw "Missing build output: $dll" }
+          }
+          Copy-Item README.md, LICENSE.md build/vMenu/
+          Remove-Item -Recurse -Force build/vMenu/.vscode -ErrorAction SilentlyContinue
+          Compress-Archive -Path build/vMenu -DestinationPath vMenu.zip
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: ${{ steps.version.outputs.tag }}
+          generate_release_notes: true
+          files: vMenu.zip
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

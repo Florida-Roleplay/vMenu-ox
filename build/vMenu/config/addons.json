@@ -20,7 +20,7 @@
     }
   },
   "weapons": {
-    "Friendly Name": "WEAPON_NAME"
+    "Breaching Shotgun": "WEAPON_870BREACH"
   },
   "weapon_components": {
     "Friendly Name": "COMPONENT_NAME"

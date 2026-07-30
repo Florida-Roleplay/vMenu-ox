@@ -433,78 +433,28 @@ namespace vMenuClient.menus
                     {
                         if (item == weaponTints)
                         {
-                            if (HasPedGotWeapon(Game.PlayerPed.Handle, weaponInfo[sender].Hash, false))
-                            {
-                                SetPedWeaponTintIndex(Game.PlayerPed.Handle, weaponInfo[sender].Hash, newIndex);
-                            }
-                            else
-                            {
-                                Notify.Error("You need to get the weapon first!");
-                            }
+                            // Tint is stored on the weapon's ox_inventory item metadata; the server applies it
+                            // (and notifies if the weapon isn't owned yet).
+                            OxSetTint(weaponInfo[sender].SpawnName, newIndex);
                         }
                     };
                     #endregion
 
                     #region Handle weapon specific button presses
+                    // ox_inventory integration: weapons are inventory items, not weapon-wheel entries.
                     weaponMenu.OnItemSelect += (sender, item, index) =>
                     {
                         var info = weaponInfo[sender];
-                        var hash = info.Hash;
-
-                        SetCurrentPedWeapon(Game.PlayerPed.Handle, hash, true);
 
                         if (item == getOrRemoveWeapon)
                         {
-                            if (HasPedGotWeapon(Game.PlayerPed.Handle, hash, false))
+                            if (!CanDoInteraction("spawnweapon"))
                             {
-                                RemoveWeaponFromPed(Game.PlayerPed.Handle, hash);
-                                bool hasWeapon = HasPedGotWeapon(Game.PlayerPed.Handle, weapon.Hash, false);
-                                foreach (var kvp in weaponComponents)
-                                {
-                                    var compKey = kvp.Value;
-                                    if (kvp.Key is MenuCheckboxItem compItem)
-                                    {
-                                        if (weapon.Components.ContainsKey(compKey))
-                                        {
-                                            if (weapon.Components.TryGetValue(compKey, out uint compHash))
-                                            {
-                                                compItem.Enabled = HasPedGotWeapon(Game.PlayerPed.Handle, weapon.Hash, false);
-                                                compItem.Checked = HasPedGotWeaponComponent(Game.PlayerPed.Handle, weapon.Hash, compHash);
-                                            }
-                                        }
-                                    }
-                                }
-                                weaponMenu.RefreshIndex();
-                                Subtitle.Custom("Weapon removed.");
+                                return;
                             }
-                            else
-                            {
-                                if (!CanDoInteraction("spawnweapon"))
-                                {
-                                    return;
-                                }
 
-                                var ammo = 255;
-                                GetMaxAmmo(Game.PlayerPed.Handle, hash, ref ammo);
-                                GiveWeaponToPed(Game.PlayerPed.Handle, hash, ammo, false, true);
-                                bool hasWeapon = HasPedGotWeapon(Game.PlayerPed.Handle, weapon.Hash, false);
-                                foreach (var kvp in weaponComponents)
-                                {
-                                    var compKey = kvp.Value;
-                                    if (kvp.Key is MenuCheckboxItem compItem)
-                                    {
-                                        if (weapon.Components.ContainsKey(compKey))
-                                        {
-                                            if (weapon.Components.TryGetValue(compKey, out uint compHash))
-                                            {
-                                                compItem.Enabled = HasPedGotWeapon(Game.PlayerPed.Handle, weapon.Hash, false);
-                                                compItem.Checked = HasPedGotWeaponComponent(Game.PlayerPed.Handle, weapon.Hash, compHash);
-                                            }
-                                        }
-                                    }
-                                }
-                                Subtitle.Custom("Weapon added.");
-                            }
+                            // The server adds the weapon item if the player doesn't have it, otherwise removes it.
+                            OxToggleWeapon(info.SpawnName, 0);
                         }
                         else if (item == fillAmmo)
                         {
@@ -513,16 +463,7 @@ namespace vMenuClient.menus
                                 return;
                             }
 
-                            if (HasPedGotWeapon(Game.PlayerPed.Handle, hash, false))
-                            {
-                                var ammo = 900;
-                                GetMaxAmmo(Game.PlayerPed.Handle, hash, ref ammo);
-                                SetPedAmmo(Game.PlayerPed.Handle, hash, ammo);
-                            }
-                            else
-                            {
-                                Notify.Error("You need to get the weapon first before re-filling ammo!");
-                            }
+                            OxRefillAmmo(info.SpawnName);
                         }
                     };
                     #endregion
@@ -532,20 +473,8 @@ namespace vMenuClient.menus
                     {
                         foreach (var comp in weapon.Components)
                         {
-                            var compItem = new MenuCheckboxItem(comp.Key, "Click to equip or remove this component.");
+                            var compItem = new MenuCheckboxItem(comp.Key, "Click to equip or remove this attachment.");
                             weaponComponents.Add(compItem, comp.Key);
-
-                            if (!HasPedGotWeapon(Game.PlayerPed.Handle, weapon.Hash, false))
-                            {
-                                compItem.Enabled = false;
-                            }
-                            else
-                            {
-                                if (weapon.Components.TryGetValue(comp.Key, out uint compHash))
-                                    {
-                                        compItem.Checked = HasPedGotWeaponComponent(Game.PlayerPed.Handle, weapon.Hash, compHash);
-                                    }
-                            };
 
                             weaponMenu.AddMenuItem(compItem);
 
@@ -555,68 +484,13 @@ namespace vMenuClient.menus
                                 if (item != compItem) return;
                                 var weaponData = weaponInfo[sender];
                                 var componentHash = weaponData.Components[weaponComponents[item]];
-                                if (HasPedGotWeapon(Game.PlayerPed.Handle, weaponData.Hash, false))
-                                {
-                                    SetCurrentPedWeapon(Game.PlayerPed.Handle, weaponData.Hash, true);
 
-                                    if (HasPedGotWeaponComponent(Game.PlayerPed.Handle, weaponData.Hash, componentHash))
-                                    {
-                                        RemoveWeaponComponentFromPed(Game.PlayerPed.Handle, weaponData.Hash, componentHash);
-                                        foreach (var kvp in weaponComponents)
-                                        {
-                                            var compKey = kvp.Value;
-                                            if (kvp.Key is MenuCheckboxItem compItem)
-                                            {
-                                                if (weapon.Components.ContainsKey(compKey))
-                                                {
-                                                    if (weapon.Components.TryGetValue(compKey, out uint compHash))
-                                                    {
-                                                        compItem.Enabled = HasPedGotWeapon(Game.PlayerPed.Handle, weapon.Hash, false);
-                                                        compItem.Checked = HasPedGotWeaponComponent(Game.PlayerPed.Handle, weapon.Hash, compHash);
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        Subtitle.Custom("Component removed.");
-                                    }
-                                    else
-                                    {
-                                        EquipWeaponComponent(weaponData.Hash, componentHash);
-                                        foreach (var kvp in weaponComponents)
-                                        {
-                                            var compKey = kvp.Value;
-                                            if (kvp.Key is MenuCheckboxItem compItem)
-                                            {
-                                                if (weapon.Components.ContainsKey(compKey))
-                                                {
-                                                    if (weapon.Components.TryGetValue(compKey, out uint compHash))
-                                                    {
-                                                        compItem.Enabled = HasPedGotWeapon(Game.PlayerPed.Handle, weapon.Hash, false);
-                                                        compItem.Checked = HasPedGotWeaponComponent(Game.PlayerPed.Handle, weapon.Hash, compHash);
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        Subtitle.Custom("Component equipped.");
-                                    }
-                                }
-                                else
-                                {
-                                    Notify.Error("You need to get the weapon first before you can modify it.");
-                                }
+                                // Attachments live on the weapon's ox_inventory item metadata. The server toggles the
+                                // attachment (and notifies "get the weapon first" if the weapon isn't owned yet).
+                                OxToggleComponent(weaponData.SpawnName, componentHash);
                             };
                             #endregion
                         }
-                    }
-                    void EquipWeaponComponent(uint weaponHash, uint componentHash)
-                    {
-                        var ammo = GetAmmoInPedWeapon(Game.PlayerPed.Handle, weaponHash);
-                        var clipAmmo = GetMaxAmmoInClip(Game.PlayerPed.Handle, weaponHash, false);
-                        GetAmmoInClip(Game.PlayerPed.Handle, weaponHash, ref clipAmmo);
-
-                        GiveWeaponComponentToPed(Game.PlayerPed.Handle, weaponHash, componentHash);
-                        SetAmmoInClip(Game.PlayerPed.Handle, weaponHash, clipAmmo);
-                        SetPedAmmo(Game.PlayerPed.Handle, weaponHash, ammo);
                     }
                     #endregion
                     #region refresh and add to menu.
@@ -728,29 +602,14 @@ namespace vMenuClient.menus
             #region Handle button presses
             menu.OnItemSelect += async (sender, item, index) =>
             {
-                var ped = Game.PlayerPed;
                 if (item == getAllWeapons)
                 {
-
-                    foreach (var vw in ValidWeapons.WeaponList)
-                    {
-                        if (IsAllowed(vw.Perm))
-                        {
-                            GiveWeaponToPed(Game.PlayerPed.Handle, vw.Hash, vw.GetMaxAmmo, false, true);
-
-                            var ammoInClip = GetMaxAmmoInClip(Game.PlayerPed.Handle, vw.Hash, false);
-                            SetAmmoInClip(Game.PlayerPed.Handle, vw.Hash, ammoInClip);
-                            var ammo = 0;
-                            GetMaxAmmo(Game.PlayerPed.Handle, vw.Hash, ref ammo);
-                            SetPedAmmo(Game.PlayerPed.Handle, vw.Hash, ammo);
-                        }
-                    }
-
-                    SetCurrentPedWeapon(Game.PlayerPed.Handle, (uint)GetHashKey("weapon_unarmed"), true);
+                    // Adds every permitted weapon to the player's ox_inventory (server-side).
+                    OxGiveAllWeapons();
                 }
                 else if (item == removeAllWeapons)
                 {
-                    ped.Weapons.RemoveAll();
+                    OxRemoveAllWeapons();
                 }
                 else if (item == setAmmo)
                 {
@@ -763,17 +622,8 @@ namespace vMenuClient.menus
                         return;
                     }
 
-                    foreach (var vw in ValidWeapons.WeaponList)
-                    {
-                        if (HasPedGotWeapon(Game.PlayerPed.Handle, vw.Hash, false))
-                        {
-                            var ammoInClip = GetMaxAmmoInClip(Game.PlayerPed.Handle, vw.Hash, false);
-                            SetAmmoInClip(Game.PlayerPed.Handle, vw.Hash, ammoInClip);
-                            var ammo = 0;
-                            GetMaxAmmo(Game.PlayerPed.Handle, vw.Hash, ref ammo);
-                            SetPedAmmo(Game.PlayerPed.Handle, vw.Hash, ammo);
-                        }
-                    }
+                    // Refill the loaded ammo on every weapon currently in the inventory.
+                    OxSetAllAmmo(250);
                 }
                 else if (item == searchButton)
                 {
