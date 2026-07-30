@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using CitizenFX.Core;
 
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 using vMenuShared;
 
@@ -514,6 +515,37 @@ namespace vMenuServer
         /// </summary>
         /// <param name="source"></param>
         /// <param name="vehicleNetId"></param>
+        [EventHandler("vMenu:RequestPermissions")]
+        internal void OnRequestPermissions([FromSource] Player source)
+        {
+            // ACE is evaluated live server-side, so this re-sends the player's current permissions
+            // (used on menu open so ACE changes apply without a rejoin/restart).
+            PermissionsManager.SetPermissionsForPlayer(source);
+        }
+
+        [EventHandler("vMenu:RequestAddonPerms")]
+        internal void SendAddonPerms([FromSource] Player source)
+        {
+            var aces = new HashSet<string>();
+            foreach (var file in new[] { "config/addon_vehicles.json", "config/addon_weapons.json" })
+            {
+                var json = LoadResourceFile(GetCurrentResourceName(), file);
+                if (string.IsNullOrEmpty(json)) continue;
+                try
+                {
+                    if (JObject.Parse(json)["categories"] is JObject cats)
+                        foreach (var kv in cats)
+                        {
+                            var ace = (kv.Value as JObject)?["ace"]?.ToString();
+                            if (!string.IsNullOrEmpty(ace)) aces.Add(ace);
+                        }
+                }
+                catch { }
+            }
+            var allowed = aces.Where(ace => IsPlayerAceAllowed(source.Handle, ace)).ToList();
+            source.TriggerEvent("vMenu:SetAddonPerms", JsonConvert.SerializeObject(allowed));
+        }
+
         [EventHandler("vMenu:GetOutOfCar")]
         internal void GetOutOfCar([FromSource] Player source, int vehicleNetId)
         {

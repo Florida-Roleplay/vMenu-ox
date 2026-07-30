@@ -1,0 +1,10 @@
+{
+  "categories": {
+    "Restricted": {
+      "ace": "vMenu.Addons.RestrictedWeapons",
+      "weapons": {
+        "Combat Pistol": "WEAPON_COMBATPISTOL"
+      }
+    }
+  }
+}

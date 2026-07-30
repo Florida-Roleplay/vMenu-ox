@@ -349,6 +349,45 @@ namespace vMenuClient.menus
             }
             #endregion
 
+            #region addon vehicle categories (config/addon_vehicles.json)
+            foreach (var cat in AddonCategories.VehicleCategories)
+            {
+                var catBtn = new MenuItem(cat.Name, $"Spawn an addon vehicle from the ~o~{cat.Name} ~s~category.");
+                MenuNui.SetIcon(catBtn, "car");
+                var catMenu = new Menu("Vehicle Spawner", cat.Name);
+                MenuController.AddSubmenu(menu, catMenu);
+                menu.AddMenuItem(catBtn);
+
+                if (AddonCategories.IsAllowed(cat))
+                {
+                    MenuController.BindMenuItem(menu, catMenu, catBtn);
+                }
+                else
+                {
+                    catBtn.LeftIcon = MenuItem.Icon.LOCK;
+                    catBtn.Description = "You don't have permission to access this category.";
+                    catBtn.Enabled = false;
+                }
+
+                var catModels = new List<string>();
+                foreach (var model in cat.Vehicles)
+                {
+                    var display = GetVehDisplayNameFromModel(model);
+                    var vehName = display != "NULL" ? display : (model.Length > 0 ? char.ToUpper(model[0]) + model.Substring(1).ToLower() : model);
+                    if (!string.IsNullOrWhiteSpace(SearchTerm) && vehName.IndexOf(SearchTerm, StringComparison.OrdinalIgnoreCase) < 0) continue;
+                    catMenu.AddMenuItem(new MenuItem(vehName, "Spawn this vehicle.") { Label = $"({model.ToLower()})" });
+                    catModels.Add(model);
+                }
+
+                var models = catModels;
+                catMenu.OnItemSelect += async (s2, it2, idx2) =>
+                {
+                    if (idx2 >= 0 && idx2 < models.Count)
+                        await SpawnVehicle(models[idx2], SpawnInVehicle, ReplaceVehicle);
+                };
+            }
+            #endregion
+
             #region handle events
             // Handle button presses.
             menu.OnItemSelect += async (sender, item, index) =>

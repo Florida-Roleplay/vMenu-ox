@@ -1,0 +1,11 @@
+{
+  "categories": {
+    "Emergency": {
+      "ace": "vMenu.Addons.Emergency",
+      "vehicles": ["police", "police2", "ambulance", "firetruk"]
+    },
+    "Custom Cars": {
+      "vehicles": []
+    }
+  }
+}

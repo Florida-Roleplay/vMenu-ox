@@ -55,7 +55,7 @@ jobs:
       - name: Bundle resource
         shell: pwsh
         run: |
-          foreach ($dll in 'vMenuClient.net.dll', 'vMenuServer.net.dll') {
+          foreach ($dll in 'vMenuClient.net.dll', 'vMenuServer.net.dll', 'MenuAPI.dll') {
             if (-not (Test-Path "build/vMenu/$dll")) { throw "Missing build output: $dll" }
           }
           Copy-Item README.md, LICENSE.md build/vMenu/

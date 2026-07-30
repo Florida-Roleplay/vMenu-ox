@@ -269,3 +269,4 @@ external/
 # VS Build Output
 build/vMenu/vMenuClient.net.dll
 build/vMenu/vMenuServer.net.dll
+build/vMenu/MenuAPI.dll

@@ -61,6 +61,15 @@ namespace vMenuClient
 
             RegisterNuiCallbackType("disableImportExportNUI");
             RegisterNuiCallbackType("importData");
+            RegisterNuiCallbackType("moveMenuDone");
+        }
+
+        [EventHandler("__cfx_nui:moveMenuDone")]
+        internal void MoveMenuDone(IDictionary<string, object> data, CallbackDelegate cb)
+        {
+            MenuAPI.MenuNui.SetMoveMode(false);
+            SetNuiFocus(false, false);
+            cb(JsonConvert.SerializeObject(new { ok = true }));
         }
 
         [EventHandler("__cfx_nui:importData")]

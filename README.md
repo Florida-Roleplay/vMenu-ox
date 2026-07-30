@@ -1,186 +1,131 @@
-# vMenu-OX 
+# fsrp-vmenu-v2
 
-Many thanks to @Gravxd for the original repository and to-do list which will be continued in this repository as his has since been archived
+FSRP's vMenu — the [vMenu](https://github.com/TomGrobbe/vMenu) admin/player menu, **re-skinned to
+render through our custom FSRP NativeUI (NUI)** and made **extensible in Lua**. All of vMenu's
+features are intact; the rendering, look, and authoring workflow are what changed.
 
---------
-
-This is a fork of vMenu designed to integrate with [ox_lib](https://github.com/overextended/ox_lib/releases/latest) you will require it for this to work.
-
-This fork introduces some new exports that work with ox_lib for better UI features and to make the menu more convenient/easier to use for players.
-
-Here's an example where we can move away from 3 separate input popups for rgb number values and to ox_lib's native inputDialog where the user can easily select a custom colour and visually see what they're choosing.
-
-![Medal_ErnwOZVBn9](https://github.com/user-attachments/assets/a83d965e-05f0-4125-9e9c-65d7f03c0fd0)
+Based on [vMenu](https://github.com/TomGrobbe/vMenu) by Tom Grobbe and the
+[vMenu-ox](https://github.com/DukeOfCheese/vMenu-ox) fork (ox_lib integration).
 
 ---
 
-### Download & Install
-Click [here](https://github.com/DukeOfCheese/vMenu-ox/releases/) to go to the releases page and download `vMenu.zip` - this will be your fivem resource folder.
+## Install
 
---------
+1. Drop `build/vMenu/` into your server's `resources/` (rename to `vMenu`).
+2. `ensure ox_lib` then `ensure vMenu` in `server.cfg`.
+3. Open the menu as usual. Configure via `config/`, `permissions.cfg`, and convars (below).
 
-### Support/Issues with my Fork
-Support for this repository going forward can be found below!
-[Atlas Development](https://discord.atlasdevops.com)
+`build/vMenu/` is the ready-to-run resource. To rebuild from source see **Building** below.
 
-# Fork Features/Changes
+---
 
-### Core/UI
+## What we changed
 
-- Input Dialog Replace
-  - Replaces the base game user input and replaces with ox_lib input dialog for easier use such as copy/pasting spawncodes etc.
-  - Adds ox_lib input slider for predefined values to prevent issues on inputs
-- User Confirmations
-  - Important actions like weather/time changes have user confirmation buttons preventing unwanted mishaps with a misclick.
+### 1. Rendering — MenuAPI → FSRP NativeUI (NUI)
+vMenu draws through **MenuAPI**; we vendored MenuAPI's source (`MenuAPI/`, patched — replaces the
+`MenuAPI.FiveM` NuGet package) and added a bridge (`MenuAPI/MenuNui.cs`) that **disables the native
+`DrawRect`/`DrawSprite` rendering and serialises each menu to our NUI** (`SendNuiMessage`). Input
+stays native (keyboard nav). The NUI is a Vite + React + TypeScript + Tailwind + Satoshi app,
+rendered on vMenu's `ui_page` (merged with vMenu's existing `storage.html`). See `NUI-RESKIN.md`.
 
-## Code Share System
-For code sharing to function, you will require [oxmysql](https://github.com/overextended/oxmysql/releases)<br>
-If you have oxmysql, you can enable the outfit/vehicle sharing systems in the `permissions.cfg`
+- **FSRP store theme** — blue gradient selection (`#4059d6 → #2b42a3`), glass surfaces, Satoshi font,
+  configurable accent colour (drives selection, stat bars, checkboxes, counter).
+- **Accent synced to fsrp-hud** — `addons/accent_sync.lua` pulls the server-wide accent from
+  `exports['fsrp-hud']:GetCurrentAccentColor()` on start and follows the `fsrp-hud:accentColorChanged`
+  event live. Falls back to the default accent if fsrp-hud isn't running.
+- **GTA text colour codes** (`~r~`, `~g~`, `~b~`, `~h~`, `~s~`, `~n~`, …) parsed to real colours.
+- **Menu alignment** left / centre / right — follows vMenu's "Right Align Menu" setting, plus a
+  convar override (`setr vmenu_nui_side "center"`).
+- Banner is a separate rounded card; no drop-shadows / neon glow; slight rounding.
 
-This is a custom sharing system I designed for vMenu to follow similar behaviour i've seen in some clothing creators on economy servers.
-This allows for super easy & simple sharing MP ped configurations between players.
+### 2. Icons
+- **50+ icons** with **keyword auto-mapping** — every option gets a fitting icon by its name
+  (Armor→shield, Heal→heart, Teleport→pin, Weather→cloud, Repair→wrench, etc.).
+- **Weapon category icons** use the real GTA HUD weapon silhouettes (pistol, rifle, shotgun, SMG,
+  throwable, melee, heavy, sniper).
+- **Configurable** (convars): `setr vmenu_nui_icons_categories "false"` and
+  `setr vmenu_nui_icons_items "false"` toggle decorative icons (functional icons like the disabled
+  lock always show).
 
-Players create unique codes for a saved MP Ped and can give that code out where others can then load said outfit keeping their unique characteristics like hair, tattoos etc but getting clothing & prop options allowing super easy sharing!
+### 3. Ped customization
+- **Colour swatches** — hair, highlight, beard, eyebrows, makeup, blush, lipstick, chest hair render
+  as our colour-strip using the real GTA palette (`GetHairRgbColor` / `GetMakeupRgbColor`).
+- **Texture indicator** — clothing/props show a bold **`Texture X/Y`** at the bottom, updating live.
 
-This has since been added to vehicles and weapon loadouts.
+### 4. Weapon / vehicle stats
+Weapon and vehicle stat panels (damage / fire rate / accuracy / range · top speed / accel / braking /
+traction) render as our stat bars.
 
-Each code system is toggleable via a convar in the permissions.cfg meaning you can enable some and disable others
+### 5. Addon vehicles / weapons with categories + ACE
+`config/addon_vehicles.json` and `config/addon_weapons.json` — group addon vehicles/weapons into
+**custom categories**, each with an optional **ACE permission** (resolved server-side). Locked
+categories show a lock. Grant with e.g. `add_ace group.admin vMenu.Addons.Emergency allow`.
+See `ADDON-CATEGORIES-PLAN.md`.
 
-_Say goodbye to huge spreadsheets with different numbers and say hello to simple one code input for your roleplay servers!_
-
-### Addons
-
-Previously, addons.json would load into a separate section of the menu for vehicles, weapons and peds. This has since been changed so that the addons load directly into existing lists and show up in the menu like a base game asset. 
-
-Custom weapons also support component menus
-  - Currently custom weapons are UNABLE to be assigned custom permissions without a recompile as the Permission enum is compiled not generated at runtime
-  - Custom weapons can only be accessed through the `WP.All` permission or can be assigned a permission in the Permission file (you can get support for this [here](https://discord.atlasdevops.com))
-
-### Vehicle
-
-- Colour Selector
-  - Gives users a hex selector for custom colour setting within vehicle options (primary/secondary)
-- New Permissions
-  - Bulletproof Tires `vMenu.VehicleOptions.BulletproofTires` (default: denied)
-- Fixed getting disarmed (weapon taken away) when locking/unlocking personal vehicles
-- Implemented cooldown between usage of close all doors to patch exploit to make cars float/fly
-- Configurable cooldown when spawning vehicles to prevent players from spam spawning vehicles
-  - `setr vmenu_vehicle_spawner_cooldown 1000`
-- Added handling menu to be able to read and write handling live to vehicles
-- Added engine sound menu to edit the sound of the vehicle from vMenu
-
-### Weapons
-
-- Changed component buttons to checkboxes to reveal which components are equipped or not at a glance
-  - Also updates so that clashing components update each other --> when Extended Clip is selected, Default Clip unselects
-- Added live weapon statistics editing (LIMITED OPTIONS CURRENTLY)
-
-### Weather
-
-- Added convar `vmenu_blackout_affect_vehicles` (default: false) so that vehicle headlights/police lightbars continue to operate during blackouts
-
-### Misc
-
-- Keybinds for Thermal & Night Vision Modes
-  - This is locked to users that have the permissions assigned to them.
-- Patched vulnerability on weather events that could easily be exploited - thanks to [this pull](https://github.com/TomGrobbe/vMenu/pull/430/) that isn't merged as of 7th Jan 25.
-- Disable AI with ease, with a simple convar in your permissions.cfg - `set vmenu_disable_ai true` (false by default)
-
-### Devtools
-
-- Auto freeze entites created with the entity spawner menu (to avoid them falling through map automatically on contact)
-- Copy Coordinates Button (vector4)
-- Copy Vehicle Model Hash
-
-# Developer Integrations
-
-Below is information related to exposed events/functions you can use in your resources to integrate your server better with vMenu.
-In the FiveM resource, head to the `client` & `server` folders and you will see files labelled `integrations`.
-
-Here you will find any events/exports for use and you can implement your server specific needs.
-
-**Example Client Event:**
-```lua
----@class logAction
----@field action string
----@field data table
-AddEventHandler("vMenu:Integrations:Action", function(action, data)
-    if action == "infinitefuel" then
-        ---@class data table
-        ---@field enabled boolean
-        lib.print.debug("Infinite Fuel: " .. tostring(data.enabled))
-    elseif action == "licenseplate" then
-        ---@class data table
-        ---@field handle integer
-        ---@field plate string
-        lib.print.debug("License Plate Updated: " .. data.handle .. " - " .. data.plate)
-        --[[
-            Example Usage:
-            if doesTextContainBlacklistedWord(plate) then
-                SetVehicleNumberPlateText(handle, "PLATE")
-                TriggerServerEvent("banplayer")
-            end
-        --]]
-    elseif action == "noclip" then
-        ---@class data table
-        ---@field enabled boolean
-        lib.print.debug("NoClip: " .. tostring(data.enabled)) 
-    end
-end)
-```
-
-We also built a handy export for developers to block simple actions like spawning vehicles in restricted areas (jail, whilst dead etc)
+### 6. Lua extensibility (no C# rebuild) — **new**
+Build menu categories/options in **Lua**. Any `.lua` in `addons/` (client) and `server/addons/`
+(server) is auto-loaded. Full C# menu-building API is exposed as exports; a wrapper
+(`lua/menu_api.lua`) gives a clean Lua API with callbacks. See **`LUA-ADDONS.md`**.
 
 ```lua
----@field type string
-exports("canDoInteraction", function(action)
-    if action == "spawnvehicle" then
-      if exports.core.isJailed() then return false end -- would block the user from spawning vehicles in jail.
-    end
-    return true
-end)
+local menu = vMenu.CreateCategory("Server Extras", "star", "addons")   -- "main" or "addons"
+menu:AddButton("Repair Vehicle", "wrench", function() ... end, { description = "…" })
+menu:AddCheckbox("God Mode", false, "shield", function(on) SetEntityInvincible(PlayerPedId(), on) end)
+menu:AddList("Time", { "Morning", "Noon", "Night" }, 1, "clock", function(i, v) ... end)
+local sub = menu:AddSubmenu("Tuning", "wheel"); sub:AddSlider("Power", 0, 10, 5, "speed", print)
+```
+Example test command: `/vmenu-setaccent` (`addons/setaccent.lua`) opens an ox_lib colour picker and
+sets the menu accent live via `exports.vMenu:SetAccent(r, g, b)`.
+
+### 7. Live ACE refresh
+ACE changes apply without a rejoin/restart. The menu re-requests permissions (main + addon
+categories) on open, and **rebuilds when they change** — silently while the menu is closed, or on the
+next close if it's currently open (no open delay). Scripts can force a silent refresh right after
+changing a player's perms:
+
+```lua
+exports.vMenu:RefreshPermissions()
 ```
 
-### To-Do / Suggested Ideas
-- [x] Alphabetically sort weapons in categories
-- [x] Implement ids into notifications to cleanup / stop duplicate spammy notifications
-- [x] ~~Sync Time/Weather into GlobalStates~~ Add export for time / weather
-- [x] Add new event for ban manager so that developers can easily integrate their own anticheat/banning functions for event exploiters
-- [x] Ratelimit on close all/open all doors (exploit to make cars fly)
-- [x] Configurable vehicle spawn cooldown
-- [x] ~~Take weapon spawning functionality out of c# and add export for LUA so that devs can easily integrate ox_inventory~~
-- [x] Export to add weapons + attachments into vmenu categories without them having to rebuild [REMOVE ADDON WEAPON SUBMENU / CODE] (maybe this gets extended to peds/vehicles?)
-- [x] Add a export before weapon/vehicle spawning/teleports such as isRestrained() so developers can easily block actions and add their own cuff/death scripts etc
-- [x] ~~Separate branch (maybe?) for outfit/weapon/vehicle code system~~ Planned to go ahead in main fork and add dependency of oxmysql as most servers use it. Maybe ill just do a resource check so if the resource isnt installed the buttons just error and say plugin not installed or smth?
-- [x] Update weapon attachment right button if it is equipped (checkmark)
-- [x] Copy Coords Button (devtools)
-- [x] Ability to save BP tires on vehicles? (would need to perm check on re-apply)
-- [x] Add an event that is triggered when infinite fuel is enabled so developers can easily integrate with scripts other than FRFUEL
-- [x] Modify weapon stats (both on weapon spawn and dynamically)
-- [x] Ability to create weapon loadout codes
-- [x] ~~Update Voice Chat menu to use pma-voice instead~~ Removing vMenu integrated voice chat
-- [ ] Searchable menus (incl. convar to enable / disable)
-- [x] Convert show player names to LUA function to allow for easier developer integration
-- [x] Fix non-custom notifications
-- [x] Incorporate engine / ~~siren~~ sound modification to VO
-- [x] Allow live handling editing for vehicles
-- [ ] Add in vMenu Discord webhook logs
+Lua-added categories are re-attached on rebuild.
 
---------
+### 8. Fixes
+- Stripped vMenu's `→→→` submenu-arrow labels (our chevron replaces them).
+- Navigation **skips spacers/dividers** (selection no longer lands on a divider).
+- Spacers render as clean separator dividers.
+- Description bar hides when there's no help text.
 
-### Below is the information for the source project, all credit to the creation goes to Vespura, thank you to him for making an easy to use open source project for everyone. If you have an issue with a feature of this work or the ox_lib/dev integrations of `THIS FORK`, please use my discord as they will not be able to provide support for you. In accordance to the license, this is released as a fork with proper credit as well as a link to the original repository.
+---
 
---------
+## Config quick reference
 
-# vMenu (Original)
-vMenu is a server-side menu for FiveM servers created by Vespura - find the original repository [here](https://github.com/TomGrobbe/vMenu)
+| Setting | Where | Effect |
+|---|---|---|
+| `vmenu_nui_side` | convar | `left` / `center` / `right` menu alignment |
+| `vmenu_nui_icons_categories` | convar | `false` hides category-row icons |
+| `vmenu_nui_icons_items` | convar | `false` hides per-option icons |
+| `config/addon_vehicles.json` | file | addon vehicle categories + optional `ace` |
+| `config/addon_weapons.json` | file | addon weapon categories + optional `ace` |
+| `addons/*.lua` | folder | your Lua menu addons (client) |
+| `server/addons/*.lua` | folder | your Lua addon server logic |
 
---------
+---
 
-### Original Repository License
-Tom Grobbe - https://www.vespura.com/
-Copyright © 2017-2025
+## Building
 
-You can use and edit this code to your liking as long as you don't ever claim it to be your code and always provide proper credit.
-You're **not** allowed to sell vMenu or any code you take from it.
-If you want to release your version of vMenu, you have to link the original GitHub repo or release it via a Forked repo.
+Requires the **.NET SDK** (8) and **Python 3** (for the NUI merge). From the repo root:
+
+```
+dotnet build vMenu/vMenuClient.csproj -c Release       # -> build/vMenu/vMenuClient.net.dll (+ MenuAPI.dll)
+dotnet build vMenuServer/vMenuServer.csproj -c Release  # -> build/vMenu/vMenuServer.net.dll
+python tools/build_nui.py                               # -> build/vMenu/nui/index.html (+ images)
+```
+
+The NUI source lives in the FSRP NativeUI project; `tools/build_nui.py` merges the built menu UI with
+vMenu's `storage.html`. Lua files (`lua/`, `addons/`, `server/addons/`) are loaded directly.
+
+---
+
+## Credits
+- vMenu — Tom Grobbe. vMenu-ox — Gravxd & DukeOfCheese. MenuAPI — Tom Grobbe.
+- FSRP NativeUI NUI, Lua bridge, addon system — Florida-Roleplay.

@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="MenuAPI.FiveM" Version="3.2.2" />
+    <ProjectReference Include="..\MenuAPI\MenuAPI.csproj" />
 
     <Reference Include="Microsoft.CSharp" />
     
